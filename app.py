@@ -41,7 +41,8 @@ werkzeuge = [
     "🧊 DGL 1. Ordnung", "⚙️ Regelungstechnik", "🧲 Lagrange-Mechanik",
     "📐 Balkenkräfte", "📊 Matrizenwerkzeuge", "🔄 Laplace-Transformation",
     "⚡ RLC-Schaltung", "🧾 Einheitenrechner",
-    "📌 Biegemomentdiagramm", "🚗 Kinematik-Rechner"
+    "📌 Biegemomentdiagramm", "🚗 Kinematik-Rechner",
+    "📚 Physikalische Formeln", "🎥 2D-Simulationen"
 ]
 auswahl = st.sidebar.radio("Werkzeug", werkzeuge)
 
@@ -293,3 +294,78 @@ elif auswahl == "🚗 Kinematik-Rechner":
     fig.add_trace(go.Scatter(x=t_vals, y=s_vals, mode='lines', name='s(t)'))
     fig.update_layout(title='Orts-Zeit-Verlauf', xaxis_title='t [s]', yaxis_title='s(t) [m]')
     st.plotly_chart(fig)
+
+# 15. Physikalische Formeln
+elif auswahl == "📚 Physikalische Formeln":
+    st.header("📚 Physikalische Formelsammlung")
+    tool_info(
+        "Formelsammlung",
+        "Durchsuche wichtige Formeln nach Stichwörtern (Mechanik, Thermo, etc.).",
+        "Geben Sie einen Begriff wie 'Energie', 'Druck', 'Kraft' ein.",
+        ["s = v⋅t", "F = m⋅a", "p = F / A", "Q = m⋅c⋅ΔT"]
+    )
+
+    formeln = {
+        "Geschwindigkeit": r"v = \frac{s}{t}",
+        "Beschleunigung": r"a = \frac{\Delta v}{\Delta t}",
+        "Kraft": r"F = m \cdot a",
+        "Arbeit": r"W = F \cdot s",
+        "Leistung": r"P = \frac{W}{t}",
+        "Druck": r"p = \frac{F}{A}",
+        "Dichte": r"\rho = \frac{m}{V}",
+        "Impuls": r"p = m \cdot v",
+        "Kinetische Energie": r"E_{kin} = \frac{1}{2}mv^2",
+        "Potenzielle Energie": r"E_{pot} = mgh",
+        "Ohmsches Gesetz": r"U = R \cdot I",
+        "Elektrische Leistung": r"P = U \cdot I",
+        "Wärmeenergie": r"Q = m \cdot c \cdot \Delta T",
+        "Wirkungsgrad": r"\eta = \frac{P_{ab}}{P_{zu}}",
+        "Hooke'sches Gesetz": r"\sigma = E \cdot \varepsilon"
+    }
+
+    suchbegriff = st.text_input("🔍 Formel suchen", "").lower()
+    treffer = {k: v for k, v in formeln.items() if suchbegriff in k.lower() or suchbegriff in v.lower()}
+
+    if suchbegriff:
+        if treffer:
+            for name, f in treffer.items():
+                st.markdown(f"**{name}:**")
+                st.latex(f)
+        else:
+            st.warning("Keine passende Formel gefunden.")
+    else:
+        st.info("Bitte einen Suchbegriff eingeben.")
+
+# 16. 2D-Simulationen
+elif auswahl == "🎥 2D-Simulationen":
+    st.header("🎥 2D-Simulationen für Maschinenbau")
+    tool_info(
+        "2D-Simulationen",
+        "Visualisiert klassische Mechanik-Szenarien in 2D für das Maschinenbau-Studium.",
+        "Wählen Sie eine Szene (z.B. Feder-Masse-System) und stellen Sie die Parameter ein.",
+        ["z.B. Masse-Feder-Dämpfer", "z.B. Pendel", "z.B. schräge Ebene mit Reibung"]
+    )
+
+    szenen = ["Masse-Feder-Dämpfer", "Einfachpendel", "Block auf schiefer Ebene (mit Reibung)", "2D-Kollision", "Zentralkraftbewegung"]
+    sz = st.selectbox("🎞️ Simulations-Szene auswählen", szenen)
+
+    if sz == "Masse-Feder-Dämpfer":
+        # Parameter
+        m = st.slider("Masse m [kg]", 0.1, 10.0, 1.0)
+        k = st.slider("Federkonstante k [N/m]", 1.0, 100.0, 20.0)
+        c = st.slider("Dämpfung c [Ns/m]", 0.0, 10.0, 0.5)
+        y0 = st.slider("Anfangsauslenkung [m]", -1.0, 1.0, 0.5)
+        v0 = st.slider("Anfangsgeschwindigkeit [m/s]", -5.0, 5.0, 0.0)
+        T = st.slider("Simulationsdauer [s]", 2, 20, 10)
+
+        # DGL definieren
+        def f(t, y):  # y = [s, v]
+            return [y[1], (-c * y[1] - k * y[0]) / m]
+
+        sol = solve_ivp(f, [0, T], [y0, v0], t_eval=np.linspace(0, T, 500))
+
+        # Plot
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=sol.t, y=sol.y[0], mode="lines", name="Auslenkung y(t)"))
+        fig.update_layout(title="Masse-Feder-Dämpfer Simulation", xaxis_title="Zeit [s]", yaxis_title="Auslenkung [m]")
+        st.plotly_chart(fig, use_container_width=True)
